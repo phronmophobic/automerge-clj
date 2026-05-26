@@ -1,0 +1,16 @@
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.4"}
+        com.phronemophobic/clong {:mvn/version "1.4.4"}
+        cnuernber/dtype-next {:mvn/version "11.005"}}
+ :aliases
+ {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.12" :git/sha "97c5562"}
+                 slipset/deps-deploy {:mvn/version "RELEASE"}}
+          :ns-default build}
+:project
+  {
+   :jvm-opts [;; "-Djava.library.path=/opt/local/lib"
+              "-Djna.library.path=/Users/adrian/workspace/automerge/rust/automerge-c/out"
+              ]
+
+   :extra-deps {org.bytedeco/llvm-platform {:mvn/version "17.0.6-1.5.10"}}}
+  }}
