@@ -14,6 +14,8 @@
    [java.util Map List]
    [clojure.lang MapEntry IObj IFn ILookup]))
 
+(set! *warn-on-reflection* true)
+
 ;; insert!
 
 (defn put!
@@ -219,10 +221,10 @@
    (raw/AMlistPutBool doc obj-id k (if insert? 1 0) (if v 1 0))))
 
 (defmethod -list-put byte/1 [doc obj-id k insert? v  _]
-  (let [buf  (native-buffer/malloc (alength v))
+  (let [buf  (native-buffer/malloc (alength ^bytes v))
         _ (dt/copy! v buf)
 
-        bytespan (dt-struct/map->struct :AMbyteSpan {:src (.address (dt-ffi/->pointer buf)) :count (alength v)})]
+        bytespan (dt-struct/map->struct :AMbyteSpan {:src (.address (dt-ffi/->pointer buf)) :count (alength ^bytes v)})]
     (check-and-free-result
      (raw/AMlistPutBytes doc obj-id k (if insert? 1 0) bytespan))))
 
@@ -258,7 +260,7 @@
         (list-put doc list-obj-id -1 true x)))))
 
 (defmethod -list-put String [doc obj-id k insert? v  _]
-  (let [sbuf (.getBytes v "utf-8")
+  (let [sbuf (.getBytes ^String v "utf-8")
 
         buf  (native-buffer/malloc (alength sbuf))
         _ (dt/copy! sbuf buf)
@@ -280,10 +282,10 @@
    (raw/AMmapPutBool doc obj-id (->AMstr k) (if v 1 0))))
 
 (defmethod -map-put byte/1 [doc obj-id k v _]
-  (let [buf  (native-buffer/malloc (alength v))
+  (let [buf  (native-buffer/malloc (alength ^bytes v))
         _ (dt/copy! v buf)
 
-        bytespan (dt-struct/map->struct :AMbyteSpan {:src (.address (dt-ffi/->pointer buf)) :count (alength v)})]
+        bytespan (dt-struct/map->struct :AMbyteSpan {:src (.address (dt-ffi/->pointer buf)) :count (alength ^bytes v)})]
     (check-and-free-result
      (raw/AMmapPutBytes doc obj-id (->AMstr k) bytespan))))
 
@@ -318,7 +320,7 @@
         (list-put doc list-obj-id -1 true x)))))
 
 (defmethod -map-put String [doc obj-id k v _]
-  (let [sbuf (.getBytes v "utf-8")
+  (let [sbuf (.getBytes ^String v "utf-8")
 
         buf  (native-buffer/malloc (alength sbuf))
         _ (dt/copy! sbuf buf)
@@ -827,7 +829,7 @@
                   (raw/AMemptyChange doc message* t*))]
       nil))
   (fork [this]
-    (.fork doc nil))
+    (.fork this nil))
   (fork [this heads]
     (check-and-free-result
      (raw/AMfork doc))
