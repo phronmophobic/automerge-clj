@@ -191,7 +191,11 @@
 (defn ^:private ->AMstr [s]
 
   (let [bs (dt-ffi/string->c s)
-        amstr (raw/AMstr bs)]
+        amstr (dt-struct/map->struct
+               :AMbyteSpan
+               {:src (.address (dt-ffi/->pointer bs))
+                ;; don't include null at end of string
+                :count (dec (native-buffer/native-buffer-byte-len bs))})]
     ;; make sure bytes aren't garbage collected prematurely
     (tech.v3.resource/track
      amstr
@@ -916,12 +920,12 @@
         item (raw/AMresultItem result)
         doc* (dt-ffi/make-ptr :pointer 0)
         _ (check-bool (raw/AMitemToDoc item doc*))
-        newdoc (nth doc* 0)]
+        newdoc (->Document (Pointer. (nth doc* 0)))]
     (tech.v3.resource/track newdoc
                             {:dispose-fn
                              (fn []
                                (raw/AMresultFree result))})
-    (->Document newdoc)))
+    newdoc))
 
 
 (deftype SyncState [ptr]
@@ -948,6 +952,37 @@
         (raw/AMresultFree result))})
     sync-state))
 
+(defn sync-state-encode
+  "Encodes a synchronization state as a dtype native buffer."
+  [sync-state]
+  (with-item
+   [item (raw/AMsyncStateEncode sync-state)]
+   (let [byte-span (dt-struct/new-struct
+                    :AMbyteSpan
+                    {:container-type :native-heap})
+         _ (check-bool (raw/AMitemToBytes item byte-span))]
+     (native-buffer/clone-native
+      (native-buffer/wrap-address
+       (:src byte-span)
+       (:count byte-span))))))
+
+(defn sync-state-decode
+  "Decodes a dtype native buffer into a synchronization state."
+  [buf]
+  (let [result (check-result
+                (raw/AMsyncStateDecode buf
+                                       (native-buffer/native-buffer-byte-len buf)))
+        item (raw/AMresultItem result)
+         sync-state* (dt-ffi/make-ptr :pointer 0)
+         _ (check-bool (raw/AMitemToSyncState item sync-state*))
+         sync-state (->SyncState (Pointer. (nth sync-state* 0)))]
+    (tech.v3.resource/track
+     sync-state
+     {:dispose-fn
+      (fn []
+        (raw/AMresultFree result))})
+    sync-state))
+
 (defn generate-sync-message
   "Generates a syncronization message (as dtype native buffer) for a peer
   based upon the given syncronization state.
@@ -965,15 +1000,9 @@
               sync-message (Pointer. (nth sync-message* 0))]
           (with-item
             [item (raw/AMsyncMessageEncode sync-message)]
-            (tap> (-> item
-                      (raw/AMitemValType)
-                      raw/val-type->kw))
-
             (let [byte-span (dt-struct/new-struct
                              :AMbyteSpan
                              {:container-type :native-heap})
-                  before {:src (:src byte-span)
-                          :count (:count byte-span)}
                   _ (check-bool (raw/AMitemToBytes item byte-span))]
               (native-buffer/clone-native
                (native-buffer/wrap-address
