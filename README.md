@@ -1,6 +1,6 @@
 # automerge-clj
 
-An idiomatic clojure wrapper for [automerge](https://github.com/automerge/automerge)'s [c API](https://github.com/automerge/automerge/tree/main/rust/automerge-c).
+An clojure wrapper for [automerge](https://github.com/automerge/automerge)'s [c API](https://github.com/automerge/automerge/tree/main/rust/automerge-c).
 
 ## Usage
 
