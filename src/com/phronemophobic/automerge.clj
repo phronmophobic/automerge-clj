@@ -1073,5 +1073,161 @@
 (defn list-item? [o]
   (instance? ListItem o))
 
+(defn merge-doc-with-clj! 
+  "Merges a clj datastructure with an automerge doc.
+  Will mutate the doc in place. Tries to reduce the
+  number of edits to the doc. Changes will be purely
+  additive (ie. data in `doc`, but not in `m` will
+  not be removed).
+  
+  `doc`: an automerge document
+  `m`: a clojure map.
+  "
+  [doc m]
+  (loop [q (conj clojure.lang.PersistentQueue/EMPTY
+                 [doc m])]
+    (when-let [[doc o] (peek q)]
+      (let [q (pop q)]
+        (cond
+          (map? o)
+          (recur
+           (reduce
+            (fn [q [k v]]
+              (let [other (get doc k)]
+                (cond
+                  (and (map? v)
+                       (map? other))
+                  (conj q [other v])
+                  
+                  (and (seqable? v)
+                       other
+                       (seqable? other))
+                  (conj q [other v])
+                  
+                  (= other v) q
+                  
+                  :else
+                  (do
+                    (put! doc k v)
+                    q))))
+            q
+            o))
+          
+          (seqable? o)
+          (let [size (count doc)]
+            (recur
+             (transduce
+              (map-indexed vector)
+              (completing
+               (fn [q [i x]]
+                 (if (>= i size)
+                   (do (append! doc x)
+                       q)
+                   (let [other (nth doc i)]
+                     (cond
+                       (and (map? x)
+                            (map? other))
+                       (conj q [other x])
+                       
+                       (and (seqable? x)
+                            other
+                            (seqable? other))
+                       (conj q [other x])
+                       
+                       (= other x) q
+                       
+                       :else (do (put! doc i x)
+                                 q))))))
+              q
+              o)))
+          
+          :else (throw (ex-info "unexpected type"
+                                {:o o}))))))
+  nil)
+
+
+(defn sync-doc-with-clj! 
+  "Merges a clj datastructure with an automerge doc.
+  Will mutate the doc in place. Tries to reduce the
+  number of edits to the doc. Unlike `merge-doc-with-clj!`,
+  excess keys and values with be removed from maps and lists.        
+  
+  `doc`: an automerge document
+  `m`: a clojure map."
+  [doc m]
+  (loop [q (conj clojure.lang.PersistentQueue/EMPTY
+                 [doc m])]
+    (when-let [[doc o] (peek q)]
+      (let [q (pop q)]
+        (cond
+          (map? o)
+          (recur
+           (do
+             ;; remove all keys in doc that are not in o
+             (doseq [[k v] doc]
+               (when (not (contains? o k))
+                 (delete! doc k)))
+             
+             (reduce
+              (fn [q [k v]]
+                (let [other (get doc k)]
+                  (cond
+                    (and (map? v)
+                         (map? other))
+                    (conj q [other v])
+                    
+                    (and (seqable? v)
+                         other
+                         (seqable? other))
+                    (conj q [other v])
+                    
+                    (= other v) q
+                    
+                    :else
+                    (do
+                      (put! doc k v)
+                      q))))
+              q
+              o)))
+          
+          (seqable? o)
+          (let [size (count doc)]
+            ;; remove all excess items at end of doc
+            (let [to-remove (- size (count o))]
+              (when (pos? to-remove)
+                (dotimes [i to-remove]
+                  (pop! doc))))
+
+            (recur
+             (transduce
+              (map-indexed vector)
+              (completing
+               (fn [q [i x]]
+                 (if (>= i size)
+                   (do (append! doc x)
+                       q)
+                   (let [other (nth doc i)]
+                     (cond
+                       (and (map? x)
+                            (map? other))
+                       (conj q [other x])
+                       
+                       (and (seqable? x)
+                            other
+                            (seqable? other))
+                       (conj q [other x])
+                       
+                       (= other x) q
+                       
+                       :else (do (put! doc i x)
+                                 q))))))
+              q
+              o)))
+          
+          :else (throw (ex-info "unexpected type"
+                                {:o o}))))))
+  nil)
+
+
 
 
