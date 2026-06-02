@@ -16,7 +16,26 @@
 
 (set! *warn-on-reflection* true)
 
-;; insert!
+(defn pop! 
+  "For lists, removes the last item."
+  [doc]
+  (protocols/delete! doc -1))
+
+(defn delete!
+  "For maps, removes for the given key, `k`. Has no effect if `k` does not already exist.
+  
+  For lists, removes the item at index `k`. Throws exception if `k`>= (count doc). Passing a negative `k` is undefined and behavior may change in the future."
+  [doc k]
+  (protocols/delete! doc k))
+
+(defn insert! 
+  "For lists, inserts `v` at index `idx`."
+  [doc idx v]
+  (protocols/insert! doc idx v))
+(defn append! 
+  "For lists, adds `v` to the end of the list."
+  [doc v]
+  (protocols/insert! doc -1 v))
 
 (defn put!
   "For maps, sets value to `v` for the given key, `k`.
@@ -593,6 +612,13 @@
             (raw/val-type->kw
              (raw/AMitemValType item))))))
 
+
+(defn ^:private map-delete! [doc item k]
+  (let [obj-id (raw/AMitemObjId item)]
+    (check-and-free-result
+                (raw/AMmapDelete doc obj-id (->AMstr k)))
+    nil))
+
 (deftype ^{:doc ""}
  MapItem [doc item]
 
@@ -619,6 +645,9 @@
     nil)
   (->clj [this]
     (->clj* doc item))
+  (delete! [this k]
+    (map-delete! doc item k)
+    nil)
 
   ;; ItemType
   ;; (item-type [this]
@@ -669,6 +698,12 @@
                (get-item-result doc item))))
       (range n)))))
 
+(defn ^:private list-delete! [doc item idx]
+  (let [obj-id (raw/AMitemObjId item)]
+    (check-and-free-result
+     (raw/AMlistDelete doc obj-id idx))
+    nil))
+
 
 (deftype ^{:doc ""}
  ListItem [doc item]
@@ -705,6 +740,13 @@
     nil)
   (->clj [this]
     (->clj* doc item))
+  (delete! [this k]
+    (list-delete! doc item k)
+    nil)
+
+  protocols/IListItem
+  (insert! [this idx v]
+    (list-put doc (raw/AMitemObjId item) idx true v))
 
   ;; ItemType
   ;; (item-type [this]
@@ -762,6 +804,9 @@
     nil)
   (->clj [this]
     (->clj* doc nil))
+  (delete! [this k]
+    (map-delete! doc nil k)
+    nil)
 
   ;; ItemType
   ;; (item-type [this]

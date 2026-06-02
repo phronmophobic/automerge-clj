@@ -2,9 +2,13 @@
 
 
 (defprotocol IItem
+  (delete! [item k])
   (put! [item k v])
   (->clj [item])
   (root-item [item]))
+
+(defprotocol IListItem
+  (insert! [item idx v]))
 
 (defprotocol IDocument
   (merge! [dest src])
