@@ -481,7 +481,6 @@
       ;; :val-type/default
       ;; :val-type/cursor
       ;; :val-type/unknown
-      ;; :val-type/void
       ;; :val-type/sync-have
       ;; :val-type/change-hash
       ;; :val-type/actor-id 
@@ -490,7 +489,7 @@
       ;; :val-type/mark
       ;; :val-type/sync-message
 
-      :val-type/null nil
+      (:val-type/null :val-type/void) nil
 
       :val-type/uint
       (let [ptr (dt-ffi/make-ptr :int64 0)]
