@@ -1068,5 +1068,10 @@
        (raw/AMreceiveSyncMessage doc sync-state sync-message))))
   nil)
 
+(defn map-item? [o]
+  (instance? MapItem o))
+(defn list-item? [o]
+  (instance? ListItem o))
+
 
 
