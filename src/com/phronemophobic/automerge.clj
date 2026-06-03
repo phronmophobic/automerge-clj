@@ -1,5 +1,5 @@
 (ns com.phronemophobic.automerge
-  (:refer-clojure :exclude [load])
+  (:refer-clojure :exclude [load pop!])
   (:require [com.phronemophobic.automerge.impl.raw :as raw]
             [com.phronemophobic.automerge.protocols :as protocols]
             [com.phronemophobic.automerge.impl.protocols :as impl.protocols
