@@ -1096,12 +1096,11 @@
               (let [other (get doc k)]
                 (cond
                   (and (map? v)
-                       (map? other))
+                       (map-item? other))
                   (conj q [other v])
                   
-                  (and (seqable? v)
-                       other
-                       (seqable? other))
+                  (and (instance? List v)
+                       (list-item? other))
                   (conj q [other v])
                   
                   (= other v) q
@@ -1126,12 +1125,11 @@
                    (let [other (nth doc i)]
                      (cond
                        (and (map? x)
-                            (map? other))
+                            (map-item? other))
                        (conj q [other x])
                        
-                       (and (seqable? x)
-                            other
-                            (seqable? other))
+                       (and (instance? List x)
+                            (list-item? other))
                        (conj q [other x])
                        
                        (= other x) q
@@ -1173,12 +1171,11 @@
                 (let [other (get doc k)]
                   (cond
                     (and (map? v)
-                         (map? other))
+                         (map-item? other))
                     (conj q [other v])
                     
-                    (and (seqable? v)
-                         other
-                         (seqable? other))
+                    (and (instance? List v)
+                         (list-item? other))
                     (conj q [other v])
                     
                     (= other v) q
@@ -1190,7 +1187,7 @@
               q
               o)))
           
-          (seqable? o)
+          (instance? List o)
           (let [size (count doc)]
             ;; remove all excess items at end of doc
             (let [to-remove (- size (count o))]
@@ -1209,12 +1206,11 @@
                    (let [other (nth doc i)]
                      (cond
                        (and (map? x)
-                            (map? other))
+                            (map-item? other))
                        (conj q [other x])
                        
-                       (and (seqable? x)
-                            other
-                            (seqable? other))
+                       (and (instance? List x)
+                            (list-item? other))
                        (conj q [other x])
                        
                        (= other x) q
