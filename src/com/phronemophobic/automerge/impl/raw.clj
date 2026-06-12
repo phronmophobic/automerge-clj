@@ -213,6 +213,13 @@
 (doseq [[id fields] dtype-structs]
   (dt-struct/define-datatype! id fields))
 
+;; On linux, need to lookup library
+;; and retain a reference. Otherwise,
+;; weird errors and crashes will occur.
+(graal-native/when-not-defined-graal-native
+ (def ^:private automergelib
+   (com.sun.jna.NativeLibrary/getInstance "automerge")))
+
 (dt-ffi/define-library-interface 
  dtype-api
  :libraries ["automerge"])
