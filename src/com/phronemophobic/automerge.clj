@@ -852,12 +852,12 @@
           item (raw/AMresultItem result)
           doc* (dt-ffi/make-ptr :pointer 0)
           _ (check-bool (raw/AMitemToDoc item doc*))
-          newdoc (nth doc* 0)]
+          newdoc (Document. (Pointer. (nth doc* 0)))]
       (tech.v3.resource/track newdoc
                               {:dispose-fn
                                (fn []
                                  (raw/AMresultFree result))})
-      (Document. newdoc)))
+      newdoc))
   (commit! [this]
     (.commit! this nil nil))
   (commit! [this message t]
